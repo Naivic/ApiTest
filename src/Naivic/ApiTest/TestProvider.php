@@ -3,58 +3,57 @@
 namespace Naivic\ApiTest;
 
 /**
- * Базовый класс поставщика тестов
+ * Base class of Test Provider
  */
 class TestProvider {
     /**
-     * @var array - описание доступа к данным для тестов
+     * @var array - description of named data elements
      */
     protected array $data = [];
     /**
-     * @var array - описание тестов
+     * @var array - test description
      */
-    protected $tests = [];
+    protected array $tests = [];
 
     /**
-     * Конструктор
+     * Constructor
      * 
-     * @param DataProvider $dataprov  - экземпляр класса - провайдера данных для тестов
+     * @param DataProvider $dataprov  - instance of Data Provider
      */
     public function __construct( private DataProvider $dataprov ) {
         $this->init();
     }
 
     /**
-     * Инициализация данных и тестов
+     * Initialize tests and named data elements
      *
-     * Метод для перегрузки в потомках
+     * Method to overload in child classes
      */
-    protected function init() {
+    protected function init() : void {
     }
 
     /**
-     * Шорткат для получения данных из DataProvider
+     * Shortcut to get raw data from DataProvider
      *
-     * @param string $path,...   - путь к данным для DataProvider
-     *                             слева направо перечисляются ключи доступа
-     *                             для соответствующих уровней вложенности
-     * @return mixed             - данные, полученные выборкой
-     *                             по последовательности ключей
+     * @param string $path,...   - the path to data in DataProvider
+     *                             list of access keys (left to right)
+     *                             each key for corresponded nesting level
+     * @return mixed             - data obtained from DataProvider
+     *                             by accessing through given $path
      */
-    protected function dp( ...$path ) {
+    protected function dp( string ...$path ) {
         return $this->dataprov->get( ...$path );
     }
 
     /**
-     * Шорткат для получения именованных данных из $this->data через DataProvider
+     * Shortcut to get named data from $this->data through DataProvider
      *
-     * @param string $name       - ключ элемента в массиве $this->data
-     *                             описывающего путь к данным в DataProvider
-     * @param array  $args       - путь к данным, который будет добавлен
-     *                             к начальной части пути, прочитанной из $this->data
-     *                             по ключу $name
-     * @return mixed             - данные, полученные выборкой из DataProvider
-     *                             по предоставленной последовательности ключей
+     * @param string $name       - name of data element - as key in array $this->data,
+     *                             which value describes the path to corresponded data in DataProvider
+     * @param array  $args       - the path to data, which will de added to the path readed from 
+     *                             value of $this->data[$name"]
+     * @return mixed             - data obtained from DataProvider
+     *                             by accessing through combined path ($this->data[$name"] + $args)
      */
     public function __call( $name, $args ) {
         if( !array_key_exists( $name, $this->data ) ) {
@@ -65,9 +64,9 @@ class TestProvider {
     }
 
     /**
-     * Получение всех тестов из $this->tests
+     * Get all tests from $this->tests
      *
-     * @return array             - массив тестов
+     * @return array             - test data array
      */
     public function getAll() {
 
@@ -78,14 +77,12 @@ class TestProvider {
     }
 
     /**
-     * Получение определенного теста по его идентификатору
+     * Get single test by ID
      *
-     * @param string $id         - идентикатор теста -
-     *                             ключ элемента в массиве $this->tests
-     * @return array|null        - даные теста
-     *                             или null, если тест с таким id не найден
+     * @param string $id         - test id (as key in $this->tests array)
+     * @return array|null        - test data, or null if test id is not a key in $this->tests
      */
-    public function getById( $id ) {
+    public function getById( string $id ) : ?array {
 
         return $this->tests[$id] ?? null;
 

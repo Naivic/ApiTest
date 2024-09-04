@@ -3,16 +3,23 @@
 namespace Naivic\ApiTest;
 
 /**
- * Базовый класс выполнения тестирования
+ * Base class of Test framework
  */
 class Test {
 
     /**
-     * Конструктор
+     * List of check operations, which will be performed by php' eval()
+     */
+    protected array $basic_check = [
+        "==", ">=", "<=", ">", "<",
+    ];
+
+    /**
+     * Constructor
      * 
-     * @param object $api             - экземпляр класса - драйвера API
-     * @param TestProvider $testprov  - экземпляр класса - провайдера тестов
-     * @param Result $res             - экземпляр класса - сборщика результатов тестирования
+     * @param object $api             - instance of API driver
+     * @param TestProvider $testprov  - instance of Test Provider
+     * @param Result $res             - instance of Test Result Collector
      */
     public function __construct(
         protected $api,
@@ -22,20 +29,20 @@ class Test {
     }
 
     /**
-     * Исполнение отдельного теста
+     * Perform single test
      *
-     * Метод для перегрузки в потомках
+     * Method to overload in child classes
      *
-     * @param string $id   - идентификатор теста
-     * @param array  $test - массив данных теста
+     * @param string $id   - test id
+     * @param array  $test - test data
      */
-    protected function run( $id, $test ) {
+    protected function run( string $id, array $test ) : void {
     }
 
     /**
-     * Исполнение всех тестов от провайдера
+     * Perform all tests from TestProvider
      */
-    public function runAll() {
+    public function runAll() : void {
 
         foreach( $this->testprov->getAll() as $id => $test ) {
             $this->res->start( name: $test["name"], id: $id );
@@ -46,11 +53,11 @@ class Test {
     }
 
     /**
-     * Исполнение теста с конкретным идентификатором
+     * Perform single test given by ID
      * 
-     * @param string $id              - идентификатор теста
+     * @param string $id  - test id
      */
-    public function runById( $id ) {
+    public function runById( string $id ) : void {
 
         $test = $this->testprov->getById( $id );
         if( $test === null ) {
@@ -65,13 +72,48 @@ class Test {
     }
 
     /**
-     * Исполнение проверки элемента данных типа "объект"
+     * Perform check of "array" type
      * 
-     * @param string $name              - название проверки
-     * @param array  $expect            - образец для элемента
-     * @param mixed  $given             - элемент, полученный в ответе хоста
+     * @param string $name              - name of check
+     * @param array  $expect            - description of expected value
+     * @param mixed  $given             - given value
      */
-    protected function checkObject( string $name, array $expect, array $given ) {
+    protected function checkArray( string $name, array $expect, $given ) : void {
+
+        if( !is_array( $given ) ) {
+            $this->res->note( false, $name." fails: given value is not array" );
+        } else {
+
+            $this->res->note( true, $name." type check pass, array given" );
+            if( count( $expect ) > 0 ) {
+
+                if( count( $given ) == 0 ) {
+                    $this->res->note( false, $name." fails: given is an empty array" );
+                }
+
+                foreach( $expect as $n => $val ) {
+                    $item = array_shift( $given );
+                    $this->check( 'item "'.$n.'" value', $val, $item );
+                }
+            }
+        }
+
+    }
+
+
+    /**
+     * Perform check of "object" type
+     * 
+     * @param string $name              - name of check
+     * @param array  $expect            - description of expected value
+     * @param mixed  $given             - given value
+     */
+    protected function checkObject( string $name, array $expect, $given ) : void {
+
+        if( !is_array( $given ) ) {
+            $this->res->note( false, $name." fails: given value is not object" );
+            return;
+        }
 
         $expFields = array_keys( $expect );
         $givFields = array_keys( $given );
@@ -80,16 +122,16 @@ class Test {
         $missing = array_diff( $expFields, $givFields );
 
         if( count( $excess ) > 0 ) {
-            $this->res->note( false, "excess fields of answer : ".join( ",", $excess ) );
+            $this->res->note( false, $name." fails: excess fields of answer : ".join( ",", $excess ) );
         }
 
         if( count( $missing ) > 0 ) {
-            $this->res->note( false, "missing fields of answer : ".join( ",", $missing ) );
+            $this->res->note( false, $name." fails: missing fields of answer : ".join( ",", $missing ) );
         }
 
         $same = array_intersect( $givFields, $expFields );
         if( count( $same ) == 0 ) {
-            $this->res->note( false, "answer dont have any of expected fields : ".join( ",", $expFields ) );
+            $this->res->note( false, $name." fails: answer dont have any of expected fields : ".join( ",", $expFields ) );
         }
 
         foreach( $same as $field ) {
@@ -99,24 +141,37 @@ class Test {
     }
 
     /**
-     * Исполнение отдельной проверки элемента данных
+     * Perform single check
      * 
-     * @param string $name              - название проверки
-     * @param array  $expect            - образец для элемента
-     * @param mixed  $given             - элемент, полученный в ответе хоста
+     * @param string $name              - name of check
+     * @param array  $expect            - description of expected value
+     * @param mixed  $given             - given value
      */
-    protected function check( string $name, $expect, $given ) {
+    protected function check( string $name, array $expect, $given ) {
 
-        $sign = $expect[0];
-        $val = $expect[1];
-        if( $sign == "object" ) return $this->checkObject( $name, $val, $given );
-        if( $sign == "array" ) return $this->checkObject( $name, $val, $given );
-
-        $giventext = is_string( $given ) ? '"'.$given.'"' : var_export( $given, 1 );
-        if( eval( 'return $given '.$sign.' $val;' ) ) {
-            $this->res->note( true, $name." is OK, have got ".$giventext );
+        $type = array_shift( $expect );
+        if( in_array( $type, $this->basic_check, true ) ) {
+            // Perform basic type check, based on php eval()
+            $val = array_shift( $expect );
+            $giventext = is_string( $given ) ? '"'.$given.'"' : var_export( $given, 1 );
+            if( eval( 'return $given '.$type.' $val;' ) ) {
+                $this->res->note( true, $name." is OK, have got ".$giventext );
+            } else {
+                $this->res->note( false, "invalid ".$name.", expected ".$val." - have got ".$giventext );
+            }
         } else {
-            $this->res->note( false, "invalid ".$name.", expected ".$val." - have got ".$giventext );
+            // Perform custom type check
+            $val = array_shift($expect);
+            if( $type == "object" ) {
+                $this->res->startSection( $name." type Object" );
+                $this->checkObject( $name, $val, $given );
+                $this->res->endSection();
+            }
+            if( $type == "array" ) {
+                $this->res->startSection( $name." type Array" );
+                $this->checkArray( $name, $val, $given );
+                $this->res->endSection();
+            }
         }
 
     }

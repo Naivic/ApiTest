@@ -3,40 +3,39 @@
 namespace Naivic\ApiTest;
 
 /**
- * Базовый класс поставщика данных для тестов
+ * Base class of Data Provider
  */
 class DataProvider {
     /**
-     * @var array - описание данных
+     * @var array - data description
      */
     protected $data = [];
 
     /**
-     * Конструктор
+     * Constructor
      */
     public function __construct() {
         $this->init();
     }
 
     /**
-     * Инициализация данных
+     * Initialize data
      *
-     * Метод для перегрузки в потомках
+     * Method to overload in child classes
      */
     protected function init() {
     }
 
     /**
-     * Получение данных из $this->data по последовательности ключей
+     * Get certain data element from $this->data by given $path
      *
-     * Если конечный элемент данных представляет собой массив -
-     * будет возвращен случайно выбранный элемент этого массива
+     * If data element is an array, method returns random item of that array
      *
-     * @param string $path,...   - путь к данным
-     *                             слева направо перечисляются ключи доступа
-     *                             для соответствующих уровней вложенности
-     * @return mixed             - данные, полученные выборкой
-     *                             по последовательности ключей
+     * @param string $path,...   - path to data element
+     *                             list of access keys (left to right)
+     *                             each key for corresponded nesting level
+     * @return mixed             - data obtained from $this->data
+     *                             by accessing through given $path
      */
     public function get( ...$path ) {
 
