@@ -13,8 +13,11 @@ class DataProvider {
 
     /**
      * Constructor
+     *
+     * @param array  $init_data - initial data overload
      */
-    public function __construct() {
+    public function __construct( array $init_data = [] ) {
+        $this->data = $init_data;
         $this->init();
     }
 
@@ -28,8 +31,6 @@ class DataProvider {
 
     /**
      * Get certain data element from $this->data by given $path
-     *
-     * If data element is an array, method returns random item of that array
      *
      * @param string $path,...   - path to data element
      *                             list of access keys (left to right)
@@ -46,19 +47,14 @@ class DataProvider {
             if( !array_key_exists( $step, $data ) ) {
                 throw new \Exception(
                     "data element '".$step."' not found"
-                  . ($log == "") ? "" : ", log path : ".$log
+                  . (($log == "") ? "" : ", log path : ".$log)
                 );
             }
             $log .= "/".$step;
             $data = $data[ $step ];
 
         }
-
-        if( is_array( $data ) ) {
-            return $data[ array_rand($data) ];
-        } else {
-            return $data;
-        }
+        return $data;
         
     }
 

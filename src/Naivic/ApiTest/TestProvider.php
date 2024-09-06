@@ -41,7 +41,7 @@ class TestProvider {
      * @return mixed             - data obtained from DataProvider
      *                             by accessing through given $path
      */
-    protected function dp( string ...$path ) {
+    public function dp( string ...$path ) {
         return $this->dataprov->get( ...$path );
     }
 

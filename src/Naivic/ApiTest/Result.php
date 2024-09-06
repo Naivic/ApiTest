@@ -9,6 +9,10 @@ namespace Naivic\ApiTest;
  */
 class Result {
     /**
+     * @var int - maximim message length
+     */
+    public const MSG_MAXLEN = 200;
+    /**
      * @var array - test results [ id_of_test => test_data, ... ]
      */
     public array $tests = [];
@@ -58,7 +62,7 @@ class Result {
      */
     public function start( string $name, string $id ) {
 
-        if( $this->res !== null ) {
+        if( $this->res !== null && $this->id !== "" ) {
             $this->tests[ $this->id ] = [
                 "id"   => $this->id,
                 "name" => $this->name,
@@ -188,7 +192,10 @@ class Result {
             }
         } else {
             if( $res == $msg[0] ) {
-                echo "\n\t\t".str_repeat("\t",$level).($res ? "+ " : "- ").$msg[1];
+                echo "\n\t\t".str_repeat("\t",$level)
+                    .($res ? "+ " : "- ")
+                    .mb_strimwidth( str_replace( "\n", '\n', $msg[1] ), 0, static::MSG_MAXLEN, "..." )
+                ;
             }
         }
     }
