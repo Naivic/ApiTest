@@ -11,7 +11,7 @@ class Test {
      * List of check operations, which will be performed by php' eval()
      */
     protected array $basic_check = [
-        "==", ">=", "<=", ">", "<",
+        "==", "!=", ">=", "<=", ">", "<",
     ];
 
     /**
